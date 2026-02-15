@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Secret Love</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body{
+      font-family: Arial;
+      background:#111;
+      color:white;
+      text-align:center;
+      padding:20px;
+    }
+    input{
+      padding:10px;
+      margin:5px;
+      width:80%;
+      border-radius:5px;
+      border:none;
+    }
+    button{
+      padding:10px 20px;
+      margin:5px;
+      border:none;
+      border-radius:5px;
+      background:#ff4d6d;
+      color:white;
+      cursor:pointer;
+    }
+    #chatBox{
+      margin-top:20px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>💖 Secret Love</h2>
+
+<div id="authSection">
+  <input type="email" id="email" placeholder="Email"><br>
+  <input type="password" id="password" placeholder="Password"><br>
+  <button onclick="register()">Register</button>
+  <button onclick="login()">Login</button>
+</div>
+
+<div id="chatSection" style="display:none;">
+  <h3 id="userEmail"></h3>
+  <button onclick="logout()">Logout</button>
+
+  <div id="chatBox">
+    <input type="text" id="message" placeholder="Type message">
+    <button onclick="sendMessage()">Send</button>
+    <div id="messages"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+  import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDSzTThXe9Nw1RG1zvfEWwkI5frlNOHYzA",
+    authDomain: "secret-love-c8d57.firebaseapp.com",
+    databaseURL: "https://secret-love-c8d57-default-rtdb.firebaseio.com",
+    projectId: "secret-love-c8d57",
+    storageBucket: "secret-love-c8d57.firebasestorage.app",
+    messagingSenderId: "249630233117",
+    appId: "1:249630233117:web:7e3b3380d05deb59272cf4"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+
+  window.register = function(){
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(() => alert("Registered Successfully"))
+      .catch(err => alert(err.message));
+  }
+
+  window.login = function(){
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    signInWithEmailAndPassword(auth, email, password)
+      .then(() => alert("Login Successful"))
+      .catch(err => alert(err.message));
+  }
+
+  window.logout = function(){
+    signOut(auth);
+  }
+
+  window.sendMessage = function(){
+    const msg = document.getElementById("message").value;
+    const user = auth.currentUser;
+
+    if(user){
+      push(ref(db, "chats"), {
+        uid: user.uid,
+        email: user.email,
+        message: msg
+      });
+      document.getElementById("message").value="";
+    }
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    if(user){
+      document.getElementById("authSection").style.display="none";
+      document.getElementById("chatSection").style.display="block";
+      document.getElementById("userEmail").innerText="Logged in as: " + user.email;
+
+      const chatRef = ref(db, "chats");
+      onValue(chatRef, (snapshot)=>{
+        const data = snapshot.val();
+        let messages="";
+        for(let id in data){
+          messages += "<p><b>"+data[id].email+"</b>: "+data[id].message+"</p>";
+        }
+        document.getElementById("messages").innerHTML=messages;
+      });
+    } else {
+      document.getElementById("authSection").style.display="block";
+      document.getElementById("chatSection").style.display="none";
+    }
+  });
+
+</script>
+
+</body>
+</html>
